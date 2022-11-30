@@ -65,7 +65,6 @@ for i in contours:
 
 for i in range(len(im_cartes)):
     im_cartes[i] = cv2_to_PIL(cv2.resize(PIL_to_cv2(im_cartes[i]), (76,100), interpolation = cv2.INTER_AREA))
-    print(im_cartes[i].size)
     plt.imshow(im_cartes[i])
     plt.show()
 
@@ -101,7 +100,7 @@ def differentiate_red(PILimg):
 def differentiate_black(PILimg):
     px = PILimg.load()
     color = ""
-    if px[8, 41][0] < 50 and px[8, 41][1] < 50 and px[8, 41][2] < 50:
+    if px[8, 41][0] < 100 and px[8, 41][1] < 100 and px[8, 41][2] < 100:
         color = "spade"
     else:
         color = "club"
