@@ -6,11 +6,13 @@ Created on Wed Nov 23 14:19:16 2022
 """
 
 #Import the libraries
-from PIL import Image
+from PIL import Image, ImageEnhance
 import cv2
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
-import pyautogui
+import pytesseract
+from poker import Suit, Rank, Card
+
 
 #Some functions to facilitate conversion between the PIL and cv2 image formats
 def cv2_to_PIL(img):
@@ -20,7 +22,7 @@ def cv2_to_PIL(img):
 
 def PIL_to_cv2(img):
     img_convert = img.convert('RGB')
-    im_cv2 = numpy.array(img_convert)
+    im_cv2 = np.array(img_convert)
     im_cv2 = im_cv2[:, :, ::-1].copy()
     return im_cv2
 
@@ -68,13 +70,7 @@ for i in range(len(im_cartes)):
     plt.imshow(im_cartes[i])
     plt.show()
 
-cv2.imwrite("carte.png", PIL_to_cv2(im_cartes[0]))
-spade = cv2.imread(r"C:\Users\vlebo\Documents\SEMESTRE 7\Software Engineering\Symboles 2\spade.png")
-diamond = cv2.imread(r"C:\Users\vlebo\Documents\SEMESTRE 7\Software Engineering\Symboles 2\diamond.png")
-club = cv2.imread(r"C:\Users\vlebo\Documents\SEMESTRE 7\Software Engineering\Symboles 2\club.png")
-heart = cv2.imread(r"C:\Users\vlebo\Documents\SEMESTRE 7\Software Engineering\Symboles 2\heart.png")
-
-symbols = [spade, diamond, club, heart]
+cv2.imwrite("carte.png", PIL_to_cv2(im_cartes[2]))
 
 
 def differentiate_red_black(PILimg):
@@ -92,18 +88,18 @@ def differentiate_red(PILimg):
     px = PILimg.load()
     color = ""
     if px[7,36][0] > 200 and px[7,36][1] < 100 and px[7,36][2] < 100:
-        color = "heart"
+        color = "♥"
     else:
-        color = "diamond"
+        color = "♦"
     return color
 
 def differentiate_black(PILimg):
     px = PILimg.load()
     color = ""
     if px[8, 41][0] < 100 and px[8, 41][1] < 100 and px[8, 41][2] < 100:
-        color = "spade"
+        color = "♠"
     else:
-        color = "club"
+        color = "♣"
     return color
 
 def symbol(PILimg):
@@ -116,9 +112,77 @@ def symbol(PILimg):
         symbol = "unknown"
     return symbol
 
-for i in im_cartes:
-    print(symbol(i))
+def getNumber(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Otsu Tresholding automatically find best threshold value
+    _, binary_image = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU)
+    
+    # invert the image if the text is white and background is black
+    count_white = np.sum(binary_image > 0)
+    count_black = np.sum(binary_image == 0)
+    if count_black > count_white:
+        binary_image = 255 - binary_image
+        
+    # padding
+    final_image = cv2.copyMakeBorder(img, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+    txt = pytesseract.image_to_string(
+        final_image, config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789')
 
+    return txt
+
+def darken_image(img):
+    gray = cv2.cvtColor(PIL_to_cv2(img), cv2.COLOR_BGR2GRAY)
+    im_gray = cv2_to_PIL(gray)
+    enhancer = ImageEnhance.Brightness(im_gray)
+    img2 = enhancer.enhance(1)
+    enhancer = ImageEnhance.Contrast(img2)
+    img2 = enhancer.enhance(3)
+    return img2
+
+
+def rank_letter(PILimg):
+    dark_img = darken_image(PILimg)
+    px = dark_img.load()
+    if (px[8, 12][0] < 100 and px[8, 12][1] < 100 and px[8, 12][2] < 100
+    and px[16, 12][0] < 100 and px[16, 12][1] < 100 and px[16, 12][2] < 100):
+        rank = "Q"
+    elif (px[8, 12][0] > 200 and px[8, 12][1] > 200 and px[8, 12][2] > 200
+    and px[16, 12][0] > 200 and px[16, 12][1] > 200 and px[16, 12][2] > 200):
+        rank = "A"
+    elif (px[8, 12][0] < 100 and px[8, 12][1] < 100 and px[8, 12][2] < 100
+    and px[16, 12][0] > 200 and px[16, 12][1] > 200 and px[16, 12][2] > 200):
+        rank = "K"
+    elif (px[8, 12][0] > 200 and px[8, 12][1] > 200 and px[8, 12][2] > 200
+    and px[16, 12][0] < 100 and px[16, 12][1] < 100 and px[16, 12][2] < 100):
+        if (px[10, 12][0] < 100 and px[10, 12][1] < 100 and px[10, 12][2] < 100):
+            rank = "A"
+        else:
+            rank = "J"
+    else:
+        rank = "T"
+    return rank
+    
+cmpt = 1
+for i in im_cartes:
+    s = symbol(i)
+    im2 = i
+    screen_crop = im2.crop((3,3, 25,30))
+    img2 = screen_crop
+    img2 = np.array(img2)
+    rgb = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Users\vlebo\AppData\Local\Tesseract-OCR\tesseract.exe"
+    nbr = getNumber(rgb)
+    nbr = nbr.replace("\n","")
+    if nbr == "":
+        nbr = rank_letter(i)
+    elif nbr == "0":
+        nbr = "T"
+    card = Card(nbr+s)
+    print(card)
+    
+    
+    
 
 
 
