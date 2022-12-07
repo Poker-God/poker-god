@@ -12,6 +12,7 @@ import numpy as np
 #import matplotlib.pyplot as plt
 import pytesseract
 from poker import Card
+import pyautogui
 
 
 #Some functions to facilitate conversion between the PIL and cv2 image formats
@@ -26,16 +27,16 @@ def PIL_to_cv2(img):
     im_cv2 = im_cv2[:, :, ::-1].copy()
     return im_cv2
 
-screen_link = r"C:\Users\vlebo\Documents\SEMESTRE 7\Software Engineering\Screen Poker\screen_cards.jpeg"
-screen = Image.open(screen_link)
-
+#screen_link = r"C:\Users\vlebo\Desktop\screen.png"
+#screen = Image.open(screen_link)
 
 #This function will return a list of images of the card on the screen
 def get_cards(PILscreen):
     #Get the screenshot, and crop it to only include the cards (5 max)
-    screen_crop = screen.crop((500,420, 880, 520))
+    screen_crop = PILscreen.crop((715,380,1200,490))
+    #screen_crop = screen.crop((257,177, 533, 255))
     
-    
+    #screen_crop.show()
     #Convert to a OpenCV-compatible format 
     opencv_image = PIL_to_cv2(screen_crop)
     
@@ -47,8 +48,10 @@ def get_cards(PILscreen):
     
     #Get the contours of the image, draw them on the image to show they are correct
     allcontours = cv2.findContours(thresh_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
     contours = allcontours[0]
     cv2.drawContours(opencv_image, contours, -1, (255,255,0), 3)
+    #cv2_to_PIL(opencv_image).show()
     
     
     #Crop the original cropped image to get each card individually in an image file
@@ -69,7 +72,7 @@ def get_cards(PILscreen):
     
     return im_cartes
 
-im_cartes = get_cards(screen)
+#im_cartes = get_cards(screen)
 
 
 #Return the color of the card (red or black)
@@ -109,13 +112,12 @@ def differentiate_black(PILimg):
 
 #Return the suit of any card
 def symbol(PILimg):
+    symbol = ""
     color = differentiate_red_black(PILimg)
     if color == "red":
         symbol = differentiate_red(PILimg)
     elif color == "black":
         symbol = differentiate_black(PILimg)
-    else:
-        symbol = "unknown"
     return symbol
 
 
@@ -180,7 +182,7 @@ def analyse_cards(im_cartes):
     for i in im_cartes:
         s = symbol(i)
         im2 = i
-        screen_crop = im2.crop((3,3, 25,30))
+        screen_crop = im2.crop((3,3, 25,31))
         img2 = screen_crop
         img2 = np.array(img2)
         rgb = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
@@ -191,16 +193,22 @@ def analyse_cards(im_cartes):
             nbr = rank_letter(i)
         elif nbr == "0":
             nbr = "T"
+        #print(nbr + " - " + s)
         card = Card(nbr+s)
         list_cards.append(card)
     return list_cards
 
-def get_cards_from_screen(screen):
+def get_cards_from_screen_link(screen_link):
+    screen = Image.open(screen_link)
+    im_cartes = get_cards(screen)
+    return analyse_cards(im_cartes)
+
+def get_cards_from_screen_image(screen):
     im_cartes = get_cards(screen)
     return analyse_cards(im_cartes)
 #______________________________________________________________________________
 
-print(get_cards_from_screen(screen))
+#print(get_cards_from_screen(screen))
     
 
 
