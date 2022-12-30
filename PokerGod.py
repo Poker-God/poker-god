@@ -13,6 +13,8 @@ from time import sleep
 import pyautogui
 from PIL.ImageQt import ImageQt
 import treys as t
+from PIL import Image
+import cv2
 
 
 class Window(QWidget):
@@ -37,6 +39,16 @@ class Window(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         vbox = QVBoxLayout()
+        
+        self.label_logo = QLabel("Logo")
+        vbox.addWidget(self.label_logo)
+        logo_link = r"C:\Users\vlebo\Documents\SEMESTRE 7\Software Engineering\a.png"
+        logo = Image.open(logo_link)
+        qim = ImageQt(logo)
+        pixmap = QPixmap.fromImage(qim)
+        pixmap = pixmap.scaled(200,200)
+        self.label_logo.setPixmap(QPixmap(pixmap))
+        self.resize(pixmap.width(), pixmap.height())
 
         self.btn1 = QPushButton("Open Image")
         self.btn1.setStyleSheet("background-color: rgb(255, 255, 255);")
